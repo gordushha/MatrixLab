@@ -1,164 +1,157 @@
-#pragma once
 #include "MyVector.h"
-#include <iostream>
-
-using namespace std;
 
 template <class T>
-class Matrix : public Vector <Vector<T> >
+class Matrix : public Vector<Vector<T>>
 {
 public:
-	Matrix(int size = 1);
-	Matrix(const Matrix<T>& m);
-	virtual ~Matrix();
+    Matrix() : Vector<Vector<T>>() {};
+    Matrix(int _r) : Vector<Vector<T>>(_r)
+    {
+        for (int i = 0; i < _r; i++)
+        {
+            this->x[i].length = _r - i;
+            this->x[i].x = new T[_r - i];
+            for (int j = 0; j < _r - i; j++)
+                this->x[i].x[j] = 0;
+        }
+    };
 
-	Matrix<T>& operator = (Matrix<T>& m);
-	Vector<T>& operator [] (int i);
-	int Length();
-	int operator == (Matrix<T>& m);
-	Matrix<T> operator + (Matrix<T>& m);
-	Matrix<T> operator - (Matrix<T>& m);
-	Matrix<T> operator * (Matrix<T>& m);
+    Matrix(const Matrix& _m)
+    {
+        this->length = _m.length;
+        this->x = new Vector<T>[this->length];
+        for (int i = 0; i < this->length; i++)
+            this->x[i] = _m.x[i];
+    };
+    Matrix(const Vector<Vector<T>>& _m) : Vector<Vector<T>>(_m)
+    {
+        for (int i = 0; i < this->Length(); i++)
+        {
+            Vector<T> result(_m.x[i]);
+            this->x[i] = result;
+        }
+    };
+    
+    Matrix(int _r, T a) : Matrix<T>(_r)
+    {
+        for (int i = 0; i < _r; i++)
+            for (int j = 0; j < _r - i; j++)
+                this->x[i][j] = a;
+    };
 
-	template <class T1>
-	friend ostream& operator << (ostream& ostr, const Matrix<T1>& A);
-	template <class T1>
-	friend istream& operator >> (istream& istr, Matrix<T1>& A);
+    int get_rows()
+    {
+        return this->Length();
+    };
+
+    Matrix<T>& operator =(Matrix<T>& _m)
+    {
+        if (this == &_m)
+            return *this;
+
+        for (int i = 0; i < this->length; i++)
+            this->x[i].~Vector();
+        delete[] this->x;
+
+        this->length = _m.Length();
+
+        this->x = new Vector<T>[this->length];
+
+        for (int i = 0; i < this->length; i++)
+            this->x[i] = _m[i];
+    };
+
+    Vector<T>& operator [](const int i)
+    {
+        if (i > this->length || i < 0)
+            throw length_error("Incorrect index");
+        return this->x[i];
+    };
+    Matrix<T> operator +(Matrix<T>& _m)
+    {
+        if (this->length != _m.Length())
+            throw "Matrices' sizes aren't equal";
+
+        Matrix<T> result(this->length);
+        for (int i = 0; i < this->length; i++)
+            result[i] = this->x[i] + _m[i];
+
+        return result;
+    };
+    Matrix<T> operator -(Matrix<T>& _m)
+    {
+        if (this->length != _m.Length())
+            throw "Matrices' sizes aren't equal";
+
+        Matrix<T> result(this->length);
+        for (int i = 0; i < this->length; i++)
+            result[i] = this->x[i] - _m[i];
+
+        return result;
+    };
+    bool operator ==(const Matrix<T>& _m) const
+    {
+        if (this->length != _m.Length())
+            return false;
+        else
+            for (int i = 0; i < this->length; i++)
+                if (this->x[i] != _m.x[i])
+                    return false;
+        return true;
+    };
+    bool operator !=(const Matrix<T>& _m) const
+    {
+        return !((*this) == _m);
+    };
+    Matrix<T> operator *(Matrix<T>& _m) //алгоритм умножения треугольных матриц MultiFaCs (c)
+    {
+        if (this->length != _m.Length())
+            throw "Can't multiply";
+
+        Matrix<T> result(this->length);
+        T t;
+        for (int i = 0; i < this->length; i++)
+            for (int j = 0; j < this->length - i; j++)
+            {
+                t = 0;
+                for (int k = i; k < j + i + 1; k++)
+                    t += x[i][k - i] * _m[k][j - k + i];
+                result[i][j] = t;
+            }
+
+        return result;
+    }
+    Matrix<T> operator *(T n)
+    {
+        Matrix<T> result(this->length);
+        for (int i = 0; i < this->length; i++)
+            result[i] = this->x[i] * n;
+
+        return result;
+    };
+
+    template <class T1>
+    friend ostream& operator<< (ostream& ostr, const Matrix<T1>& A)
+    {
+        for (int i = 0; i < A.Length(); i++)
+        {
+            for (int k = 0; k < i; k++)
+                ostr << "0 ";
+            for (int j = 0; j < A.x[i].Length(); j++)
+                ostr << A.x[i][j] << " ";
+
+
+            ostr << endl;
+        }
+
+        return ostr;
+    };
+    template <class T1>
+    friend istream& operator >> (istream& istr, Matrix<T1>& A)
+    {
+        for (int i = 0; i < A.Length(); i++)
+            istr >> A.x[i];
+        return istr;
+    };
+
 };
-
-template<class T>
-Matrix<T>::Matrix(int size):Vector<Vector<T>>(size)
-{
-	if (size <= 0) throw logic_error("invalid_argument");
-	if (size > 0)
-	{
-		x = new Vector<T>[size];
-		for (int i = 0; i < size; i++)
-			x[i].Resize(i + 1);
-		length = size;
-	}
-}
-
-template<class T>
-Matrix<T>::Matrix(const Matrix<T>& m)
-{
-	length = m.length;
-	x = new Vector<T>[length];
-	for (int i = 0; i < length; i++)
-		x[i].Resize(i + 1);
-	for (int i = 0; i < length; i++)
-		x[i] = m.x[i];
-}
-
-template<class T>
-Matrix<T>::~Matrix()
-{
-	if (x != nullptr)
-	{
-		delete[] x;
-		x = nullptr;
-	}
-}
-
-template<class T>
-Matrix<T>& Matrix<T>::operator=(Matrix<T>& m)
-{
-	if (this == &m)
-		return *this;
-
-	length = m.length;
-	if (x != NULL)
-		delete[] x;
-	x = new Vector<T>[length];
-	for (int i = 0; i < length; i++)
-		x[i].Resize(i + 1);
-	for (int i = 0; i < length; i++)
-		x[i] = m.x[i];
-	return *this;
-}
-
-template<class T>
-Vector<T>& Matrix<T>::operator [] (int i)
-{
-	if ((i >= 0) && (i < length))
-		return x[i];
-	else throw logic_error("invalid_argument");
-}
-
-template<class T>
-int Matrix<T>::Length()
-{
-	return length;
-}
-
-template<class T>
-int Matrix<T>::operator==(Matrix<T>& m)
-{
-	if (this->Length() != m.Length())
-		return 0;
-	for (int i = 0; i < m.Length(); i++)
-		for (int j = 0; j < m.Length(); j++)
-		{
-			if (i >= j)
-			{
-				if ((*this)[i][j] != m[i][j])
-					return 0;
-			}
-		}
-	return 1;
-}
-
-template<class T>
-Matrix<T> Matrix<T>::operator+(Matrix<T>& m)
-{
-	if (this->Length() != m.Length()) throw logic_error("length_error");
-	Matrix<T> result(m.Length());
-	for (int i = 0; i < result.Length(); i++)
-		result[i] = (*this)[i] + m[i];
-	return result;
-}
-
-template<class T>
-Matrix<T> Matrix<T>::operator-(Matrix<T>& m)
-{
-	if (this->Length() != m.Length()) throw logic_error("length_error");
-	Matrix<T> result(m.Length());
-	for (int i = 0; i < result.Length(); i++)
-		result[i] = (*this)[i] - m[i];
-	return result;
-}
-
-template<class T>
-Matrix<T> Matrix<T>::operator*(Matrix<T>& m)
-{
-	if (this->Length() != m.Length()) throw logic_error("length_error");
-	Matrix<T> result(m.Length());
-
-	for (int i = 0; i < result.Length(); i++)
-		for (int j = 0; j < result.Length(); j++)
-		{
-			if (i >= j)
-			{
-				result[i][j] = 0;
-				for (int k = j; k < i + 1; k++)
-					result[i][j] = result[i][j] + ((*this)[i][k] * m[k][j]);
-			}
-		}
-	return result;
-}
-
-template<class T1>
-ostream& operator<<(ostream& ostr, const Matrix<T1>& A)
-{
-	for (int i = 0; i < A.length; i++)
-		ostr << A.x[i] << endl;
-	return ostr;
-}
-
-template<class T1>
-istream& operator>>(istream& istr, Matrix<T1>& A)
-{
-	for (int i = 0; i < A.length; i++)
-		istr >> A.x[i];
-	return istr;
-}
