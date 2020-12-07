@@ -12,6 +12,7 @@ class Vector
 protected:
 	int length;
 	T* x;
+	int StartIndex;
 public:
 	Vector();
 	Vector(int _l);
@@ -34,14 +35,16 @@ public:
 	Vector<T>& operator --();
 	Vector<T>& operator +=(Vector<T>& _v);
 	Vector<T>& operator -=(Vector<T>& _v);
+    
+	int Length() const;
+	void SetStartIndex(int n);
 
 	template <class T1>
 	friend ostream& operator<< (ostream& ostr, const Vector<T1>& A);
 	template <class T1>
 	friend istream& operator >> (istream& istr, Vector<T1>& A);
 
-	int Length() const;
-
+	
 	template<class M>
 	friend class Matrix;
 };
@@ -53,7 +56,11 @@ ostream& operator<< (ostream& ostr, const Vector<T1>& A) {
 	}
 	return ostr;
 }
-
+template <class T1>
+void Vector<T1>::SetStartIndex(int n)
+{
+	StartIndex = n;
+}
 template <class T1>
 istream& operator >> (istream& istr, Vector<T1>& A) {
 	for (int i = 0; i < A.length; i++) {
@@ -67,6 +74,7 @@ Vector<T>::Vector()
 {
 	length = 0;
 	x = 0;
+	StartIndex = 0;
 }
 template <class T>
 Vector<T>::Vector(int _l)
@@ -77,6 +85,7 @@ Vector<T>::Vector(int _l)
 	x = new T[length];
 	for (int i = 0; i < length; i++)
 		x[i] = 0;
+	StartIndex = 0;
 }
 template <class T>
 Vector<T>::Vector(int _l, T* _v)
@@ -88,6 +97,7 @@ Vector<T>::Vector(int _l, T* _v)
 	x = new T[length];
 	for (int i = 0; i < length; i++)
 		x[i] = _v[i];
+	StartIndex = 0;
 }
 template <class T>
 Vector<T>::Vector(int _l, T _v)
@@ -98,19 +108,24 @@ Vector<T>::Vector(int _l, T _v)
 	x = new T[length];
 	for (int i = 0; i < length; i++)
 		x[i] = _v;
+	StartIndex = 0;
 }
 template <class T>
 Vector<T>::Vector(Vector<T>& _v)
 {
 	length = _v.length;
+	StartIndex = _v.StartIndex;
 	x = new T[length];
 	for (int i = 0; i < length; i++)
 		x[i] = _v.x[i];
+	
+
 }
 template <class T>
 Vector<T>::~Vector()
 {
 	length = 0;
+	StartIndex = 0;
 	if (x != 0)
 		delete[] x;
 	x = 0;
@@ -155,6 +170,7 @@ Vector<T>& Vector<T>::operator =(Vector<T>& _v)
 		return *this;
 
 	length = _v.length;
+	StartIndex = _v.StartIndex;
 	x = new T[length];
 	for (int i = 0; i < length; i++)
 		x[i] = _v.x[i];
@@ -170,9 +186,10 @@ inline Vector<T>& Vector<T>::operator=(const int n)
 template <class T>
 T& Vector<T>::operator[] (const int index)
 {
-	if ((index < 0) || (index >= length))
+
+	if ((index < StartIndex) || (index >= length + StartIndex))
 		throw length_error("incorrect index");
-	return x[index];
+	return x[index - StartIndex];
 }
 
 template<class T>

@@ -10,9 +10,11 @@ public:
         for (int i = 0; i < _r; i++)
         {
             this->x[i].length = _r - i;
+            this->x[i].SetStartIndex(i);
             this->x[i].x = new T[_r - i];
             for (int j = 0; j < _r - i; j++)
                 this->x[i].x[j] = 0;
+
         }
     };
 
@@ -35,7 +37,7 @@ public:
     Matrix(int _r, T a) : Matrix<T>(_r)
     {
         for (int i = 0; i < _r; i++)
-            for (int j = 0; j < _r - i; j++)
+            for (int j = i; j < _r; j++)
                 this->x[i][j] = a;
     };
 
@@ -103,7 +105,7 @@ public:
     {
         return !((*this) == _m);
     };
-    Matrix<T> operator *(Matrix<T>& _m) //алгоритм умножения треугольных матриц MultiFaCs (c)
+    Matrix<T> operator *(Matrix<T>& _m) //алгоритм умножения треугольных матриц 
     {
         if (this->length != _m.Length())
             throw "Can't multiply";
@@ -113,11 +115,12 @@ public:
         for (int i = 0; i < this->length; i++)
             for (int j = 0; j < this->length - i; j++)
             {
-                t = 0;
+                t = 0; // i = 1; j = 1;
                 for (int k = i; k < j + i + 1; k++)
-                    t += x[i][k - i] * _m[k][j - k + i];
-                result[i][j] = t;
+                    t += x[i].x[k - i] * _m[k].x[j - k + i];
+                result[i].x[j] = t;
             }
+
 
         return result;
     }
@@ -137,9 +140,8 @@ public:
         {
             for (int k = 0; k < i; k++)
                 ostr << "0 ";
-            for (int j = 0; j < A.x[i].Length(); j++)
+            for (int j = i; j < A.x[i].Length() + i; j++)
                 ostr << A.x[i][j] << " ";
-
 
             ostr << endl;
         }
